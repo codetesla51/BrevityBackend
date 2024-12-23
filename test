@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# API endpoint URL
+API_URL="http://127.0.0.1:8000/api/pdfConvert"
+PDF_FILE_PATH="CSC231-Programming_Language.pdf"
+
+# Simple test request
+curl -X POST "$API_URL" \
+    -F "pdf=@$PDF_FILE_PATH" \
+    -F "from_page=1" \
+    -F "to_page=5" \
+    -F "summary_type=dummy" | jq 
