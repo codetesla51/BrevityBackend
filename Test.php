@@ -1,31 +1,63 @@
 <?php
 require "vendor/autoload.php";
+// composer.json
 use voku\helper\UTF8;
+use ForceUTF8\Encoding;
+use Symfony\Component\String\UnicodeString;
 
-function cleanText($text)
+class TextCleaner
 {
-  // Use voku/portable-utf8 to clean up the text encoding
-  $text = UTF8::cleanup($text);
+    public function cleanText($text)
+    {
+        if (empty($text)) {
+            return '';
+        }
 
-  // Handle bold text properly
-  $text = preg_replace_callback(
-    "/\*\*(.*?)\*\*/",
-    function ($matches) {
-      return "{{BOLD_START}}" . $matches[1] . "{{BOLD_END}}";
-    },
-    $text
-  );
-  // Restore bold markers
-  $text = str_replace(
-    ["{{BOLD_START}}", "{{BOLD_END}}"],
-    ["<<BOLD>>", "<<END>>"],
-    $text
-  );
+        // Step 1: Force UTF-8 using ForceUTF8
+        $text = Encoding::toUTF8($text);
 
-  return trim($text);
+        // Step 2: Use Portable UTF8 for deep cleaning
+        $text = UTF8::cleanup($text);
+        $text = UTF8::fix_simple_utf8($text);
+
+        // Step 3: Use Symfony String for final normalization
+        $text = (new UnicodeString($text))
+            ->normalize(UnicodeString::NFKC)
+            ->toString();
+
+    $replacements = [
+      "â€“" => "—",
+      "â€" => "—",
+      "\xe2\x80\x94" => "—",
+      "â€" => "–",
+      "\xe2\x80\x93" => "–",
+      "â€œ" => "\"",
+      "â€" => "\"",
+      "â€˜" => "'",
+      "â€™" => "'",
+      "â€™" => "'",
+      "â€¦" => "…",
+      "—" => "-",
+      "–" => "-",
+      "\"" => "\"",
+      "â€•" => "'",
+      "…" => "...",
+    ];
+
+        return str_replace(array_keys($replacements), array_values($replacements), $text);
+    }
 }
 
-$text = "eBayâ€™s";
-$cleanedText = cleanText($text);
+// Usage example:
+$cleaner = new TextCleaner();
 
-echo $cleanedText; // Output: 0's and 1'str_repla
+// Test cases
+$tests = [
+    "Elaraâ€™s",
+    "itâ€™s",
+    "â€œImagine,â€•"
+];
+
+foreach ($tests as $test) {
+    echo $cleaner->cleanText($test) . "\n";
+}

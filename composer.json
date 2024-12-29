@@ -12,9 +12,11 @@
         "laravel/socialite": "^5.16",
         "laravel/tinker": "^2.9",
         "mpdf/mpdf": "^6.1",
+        "neitanod/forceutf8": "^2.0",
         "predis/predis": "^2.3",
         "setasign/fpdf": "^1.8",
         "smalot/pdfparser": "^2.11",
+        "symfony/string": "^7.2",
         "voku/portable-utf8": "^6.0"
     },
     "require-dev": {

@@ -4,24 +4,22 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::create('pdf', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
-    }
+return new class extends Migration {
+  public function up(): void
+  {
+    Schema::create("pdfs", function (Blueprint $table) {
+      $table->id();
+      $table->foreignId("user_id")->constrained();
+      $table->string("original_filename");
+      $table->string("summary_path");
+      $table->string("summary_type");
+      $table->integer("pages_processed");
+      $table->timestamps();
+    });
+  }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('pdf');
-    }
+  public function down(): void
+  {
+    Schema::dropIfExists("pdfs");
+  }
 };

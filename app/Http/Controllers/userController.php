@@ -10,7 +10,8 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Validator;
 class UserController extends Controller
 {
   /**
@@ -18,24 +19,46 @@ class UserController extends Controller
    */
   public function store(Request $request): JsonResponse
   {
-    $validated = $request->validate([
+    $ipAddress = $request->ip();
+    $existingUser = User::where("ip_address", $ipAddress)->first();
+    if ($existingUser) {
+      return response()->json(
+        [
+          "message" => "You are already registered",
+          "action" => "login",
+          "email" => $existingUser->email,
+        ],
+        422
+      );
+    }
+
+    $validationRules = [
       "name" => ["required", "string", "max:255"],
-      "password" => [
-        "required",
-        Password::min(8)
-          ->mixedCase()
-          ->numbers()
-          ->symbols()
-          ->uncompromised(),
-      ],
+      "password" => ["required", "string", "min:8"],
       "email" => ["required", "string", "email", "max:255", "unique:users"],
-    ]);
+    ];
+
+    foreach ($validationRules as $field => $rules) {
+      $singleFieldValidation = Validator::make($request->all(), [
+        $field => $rules,
+      ]);
+
+      if ($singleFieldValidation->fails()) {
+        return response()->json(
+          [
+            "message" => $singleFieldValidation->errors()->first(),
+          ],
+          422
+        );
+      }
+    }
 
     try {
       $user = User::create([
-        "name" => $validated["name"],
-        "email" => $validated["email"],
-        "password" => Hash::make($validated["password"]),
+        "name" => $request->name,
+        "email" => $request->email,
+        "password" => Hash::make($request->password),
+        "ip_address" => $ipAddress
       ]);
 
       return response()->json(
@@ -55,7 +78,6 @@ class UserController extends Controller
       );
     }
   }
-
   /**
    * Authenticate user and create token
    */
@@ -100,7 +122,9 @@ class UserController extends Controller
    */
   public function getUserInfo(Request $request): JsonResponse
   {
-    return response()->json(Auth::user()->only(["name", "email"]));
+    return response()->json(
+      Auth::user()->only(["name", "email", "used_credits"])
+    );
   }
 
   /**
@@ -108,31 +132,20 @@ class UserController extends Controller
    */
   public function redirectToGoogle()
   {
-    try {
-      // Redirect the user directly to the Google OAuth login page
-      return Socialite::driver("google")
-        ->stateless()
-        ->redirect();
-    } catch (\Exception $e) {
-      report($e);
-      return response()->json(
-        [
-          "message" => "Failed to initialize Google login",
-        ],
-        500
-      );
-    }
+    $url = Socialite::driver("google")
+      ->stateless()
+      ->redirect()
+      ->getTargetUrl();
+    return response()->json(["url" => $url]);
   }
 
-  /**
-   * Handle Google OAuth callback
-   */
   public function handleGoogleCallback()
   {
     try {
       $googleUser = Socialite::driver("google")
         ->stateless()
         ->user();
+
       $user = User::updateOrCreate(
         ["email" => $googleUser->getEmail()],
         [
@@ -142,27 +155,50 @@ class UserController extends Controller
         ]
       );
 
+      $tempCode = Str::random(32);
+      Cache::put(
+        "oauth_temp_code:{$tempCode}",
+        [
+          "user_id" => $user->id,
+          "email" => $user->email,
+        ],
+        now()->addMinutes(5)
+      );
+      $clientUrl = env("CLIENT_URL") . "/auth";
+
+      return redirect()->away("{$clientUrl}?code={$tempCode}");
+    } catch (\Exception $e) {
+      $clientUrl = env("CLIENT_URL") . "/auth";
+
+      return redirect()->away("{$clientUrl}?error=Authentication failed");
+    }
+  }
+  public function exchangeToken(Request $request)
+  {
+    try {
+      $request->validate([
+        "code" => "required|string|max:32",
+      ]);
+
+      $cacheKey = "oauth_temp_code:" . $request->code;
+      $tempData = Cache::get($cacheKey);
+
+      if (!$tempData) {
+        throw new \Exception("Invalid or expired code");
+      }
+
+      Cache::forget($cacheKey);
+
+      $user = User::findOrFail($tempData["user_id"]);
       $token = $user->createToken("GoogleLoginToken")->plainTextToken;
 
-      return response()->json([
-        "message" => $user->wasRecentlyCreated
-          ? "Account created successfully"
-          : "Login successful",
-        "user" => $user->only(["name", "email"]),
-        "token" => $token,
-      ]);
+      return response()->json(["token" => $token]);
     } catch (\Exception $e) {
-      \Log::error("Google auth error:", [
-        "message" => $e->getMessage(),
-        "trace" => $e->getTraceAsString(),
-      ]);
-
       return response()->json(
         [
-          "message" => "Google authentication failed",
           "error" => $e->getMessage(),
         ],
-        500
+        400
       );
     }
   }
