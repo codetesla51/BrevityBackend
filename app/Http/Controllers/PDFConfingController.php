@@ -58,176 +58,181 @@ DO NOT:
 - Exceed scope of original text.",
       ],
       "short" => [
-        "prompt" => "Create a focused, precise summary following these EXACT requirements:
-        
+        "prompt" => "Craft a concise yet comprehensive summary that captures all key points. Follow these instructions:
+
 1. **Core Message** (REQUIRED):
-   - Write maximimum of 5 sentences capturing the main point.
-   - Include the primary purpose and outcome.
-   - Use clear, direct language.
+   - Summarize the primary purpose and outcome in up to 5 sentences.
+   - Use clear and precise language to articulate the main point.
 
-2. **Key Insight** (REQUIRED):
-   - Identify THE single most important insight.
-   - Support with specific evidence from text.
-   - Explain why this insight matters.
+2. **Key Points** (REQUIRED):
+   - List all notable points or themes from the text.
+   - Use bullet points for clarity.
+   - Provide brief explanations for each point (1-2 sentences per point).
+   - Ensure the points are logically ordered.
 
-3. **Action Item** (REQUIRED):
-   - Provide ONE specific, actionable takeaway.
-   - Make it measurable and achievable.
-   - Include implementation timeframe.
+3. **Key Insight** (REQUIRED):
+   - Highlight the single most important takeaway.
+   - Back it up with specific evidence from the text.
+   - Explain why this insight is significant.
 
-CRUCIAL ELEMENTS:
-- Total length must be under 400 words can Exceed of required.
-- Every statement must be evidence-based.
-- Use active voice.
-- Focus on practical application.
+
+CRUCIAL REQUIREMENTS:
+- Keep the summary concise and well-structured.
+- Ensure every statement is backed by evidence.
+- Use bullet points to enhance readability.
+- Maintain focus on practical application.
 
 DO NOT:
-- Include multiple insights or actions.
-- Use vague or abstract language.
-- Add unnecessary context.
-- Exceed specified length.",
+- Exclude any critical points.
+- Use vague or overly abstract language.
+- Add unnecessary context or exceed a 400-word limit.",
       ],
       "structured" => [
-        "prompt" => "Create a structured analysis that MUST include:
-        
+        "prompt" => "Create a thorough and well-structured analysis. Follow these precise instructions:
+
 1. **Context** (REQUIRED):
-   - Provide essential background in 2-3 sentences.
-   - State the purpose/objective clearly.
-   - Identify target audience.
+   - Provide 2-3 sentences summarizing the background and importance of the topic.
+   - Clearly state the purpose or objective of the content.
+   - Specify the target audience and their relevance to the topic.
 
 2. **Main Arguments** (REQUIRED):
-   - List exactly 3-4 key arguments.
-   - Support each with specific evidence.
-   - Evaluate strength of each argument.
-   - Show logical connections.
+   - Identify and list exactly 3-4 key arguments.
+   - Provide evidence or examples to support each argument.
+   - Critically assess the strength and validity of each argument.
+   - Show logical connections and relationships between arguments.
 
 3. **Supporting Data** (REQUIRED):
-   - Present relevant statistics/numbers.
-   - Include specific examples.
-   - Cite case studies if available.
-   - Verify data accuracy.
+   - Present relevant data, statistics, or metrics.
+   - Use specific examples and cite case studies, if available.
+   - Ensure the accuracy of all data used.
+   - Highlight how the data supports the arguments.
 
 4. **Key Insights** (REQUIRED):
-   - Extract 3 practical insights.
-   - Connect to business/real-world impact.
-   - Explain implementation potential.
+   - Extract 3 practical, real-world insights from the content.
+   - Explain the broader business, societal, or real-world implications.
+   - Discuss the potential for these insights to be implemented effectively.
 
-5. **Action Items** (REQUIRED):
-   - List 3-5 specific, actionable steps.
-   - Include timeline for each.
-   - Define success metrics.
-   - Address potential obstacles.
-
-CRITICAL REQUIREMENTS:
-- Use bullet points for clarity.
-- Include specific metrics where possible.
-- Maintain consistent formatting.
-- Focus on actionable insights.
+CRUCIAL REQUIREMENTS:
+- Use clear, organized bullet points for each section.
+- Provide concrete metrics and specific evidence wherever possible.
+- Maintain consistent, structured formatting.
+- Focus on actionable and practical outcomes.
 
 DO NOT:
-- Use vague recommendations.
-- Skip quantitative data.
-- Leave action items abstract.
-- Exceed scope of source material.",
+- Use vague or overly general recommendations.
+- Omit critical data or supporting evidence.
+- Leave any steps or actions abstract or ambiguous.
+- Exceed the original scope of the content.",
       ],
       "dummy" => [
-        "prompt" => "Explain the content in simple terms. Follow these exact instructions:
-        
+        "prompt" => "Simplify and explain the content in the easiest way possible by following these precise instructions:
+
 1. **Use Everyday Examples** (REQUIRED):
-   - Break down complex concepts with relatable, easy-to-understand examples.
-   - Make sure the examples are relevant to common experiences.
-   - Avoid jargon and use clear, friendly language.
+   - Break down complex ideas into everyday, relatable examples.
+   - Connect explanations to common, real-life scenarios that are easy to imagine.
+   - Keep the language friendly, straightforward, and free of technical jargon.
 
 2. **Step-by-Step Breakdown** (REQUIRED):
-   - Simplify complex ideas into smaller, easy-to-digest steps.
-   - Use simple analogies to explain each step.
-   - Ensure clarity in every step of the explanation.
+   - Divide complicated concepts into smaller, bite-sized steps.
+   - Use plain language to explain each step clearly.
+   - Add simple analogies to help clarify tricky parts.
 
 3. **Engaging Analogies** (REQUIRED):
-   - Use relatable analogies to explain difficult concepts.
-   - Focus on comparisons that a 12-year-old would easily understand.
-   - Keep the tone conversational and approachable.
+   - Include analogies that make sense to a younger audience (e.g., a 12-year-old).
+   - Relate abstract ideas to familiar activities or objects (e.g., games, food, daily routines).
+   - Keep the tone light, conversational, and engaging.
 
-IMPORTANT REQUIREMENTS:
-- Use clear, everyday language.
-- Avoid technical jargon.
-- Keep explanations relatable and understandable for a younger audience.
+4. **Text-Based References** (REQUIRED):
+   - Always refer back to the original text for evidence or context.
+   - Highlight and quote any hard-to-understand parts directly from the text.
+   - Explain challenging or dense sections using clear, everyday language.
+
+CRUCIAL REQUIREMENTS:
+- Ensure explanations are relatable, clear, and rooted in the source text.
+- Use clear, everyday terms to replace any technical language.
+- Write as though you are explaining to someone with no background in the topic.
 
 DO NOT:
-- Use overly technical language.
-- Skip any required section.
-- Overcomplicate concepts.",
+- Go beyond the content of the source text.
+- Skip referencing hard parts or avoid quoting directly from the text.
+- Use complicated words, technical jargon, or vague analogies.
+- Oversimplify to the point of losing key meaning or depth.
+- Overshadow or distort the core message for the sake of creativity.
+- Stray from the text’s purpose or omit key content.",
       ],
       "extensive_researcher" => [
-        "prompt" => "Conduct a thorough academic analysis with a clear, structured approach. Ensure depth and clarity:
+        "prompt" => "Conduct a thorough academic analysis with a clear, structured approach. Follow these exact instructions:
 
 1. **Abstract** (REQUIRED):
-   - Provide a concise summary of the key findings (150 words).
-   - Include the core argument and major conclusions.
+   - Summarize key findings in 150 words or fewer.
+   - Include the core argument and primary conclusions concisely.
 
 2. **Introduction** (REQUIRED):
-   - Establish context, objectives, and significance of the work.
-   - Identify the main research questions and their relevance.
+   - Set the context, objectives, and significance of the work.
+   - Define the main research questions and explain their relevance to the field.
 
 3. **Methodology** (REQUIRED):
-   - Outline the approach and framework used to conduct the analysis.
-   - Discuss any tools or methods that were employed in research.
+   - Describe the approach and framework guiding the analysis.
+   - Highlight any tools, techniques, or methods employed in the research.
 
 4. **Results Analysis** (REQUIRED):
-   - Provide a detailed breakdown of the main findings.
-   - Evaluate how these findings align with the research goals.
+   - Provide a detailed breakdown of major findings.
+   - Evaluate how the results align with initial goals or hypotheses.
 
 5. **Discussion** (REQUIRED):
-   - Critically evaluate the implications of the findings.
-   - Address limitations, biases, or gaps identified during the research.
+   - Critically assess the implications of the findings.
+   - Address limitations, biases, or gaps identified during the research process.
 
 6. **Future Directions** (REQUIRED):
-   - Suggest potential areas for further research and exploration.
-   - Discuss how these future inquiries could enhance the field.
+   - Suggest potential areas for further research.
+   - Explain how these inquiries could contribute to advancing the field.
 
 7. **Key References** (REQUIRED):
    - Cite relevant academic works and supporting materials.
-   - Provide connections to prior research and findings.
+   - Connect findings to prior research to strengthen the analysis.
 
-IMPORTANT REQUIREMENTS:
-- Maintain academic rigor.
-- Avoid overly technical details that may distract from the main arguments.
+CRUCIAL ELEMENTS:
+- Maintain academic rigor with clear and structured arguments.
+- Ensure a balanced and objective evaluation of findings.
 
 DO NOT:
-- Skip any required section.
-- Use overly technical or inaccessible language.
-- Leave out key references or evidence.",
+- Skip required sections or fail to address key points.
+- Overuse technical jargon that distracts from the main arguments.
+- Exclude citations or references for any claims.
+- Exclude or misrepresent content from the text.
+- Use vague or unsupported claims.",
       ],
       "creative" => [
-        "prompt" => "Transform the content into a compelling narrative. Follow these guidelines to maintain creativity and accuracy:
+        "prompt" => "Transform the content into a compelling narrative. Follow these exact guidelines:
 
 1. **Engaging Narrative** (REQUIRED):
-   - Turn the content into a compelling story that grabs attention.
-   - Maintain a balance between creativity and accuracy.
+   - Present the content as an intriguing story that captivates readers.
+   - Ensure a seamless balance between creativity and factual accuracy.
 
 2. **Metaphors and Analogies** (REQUIRED):
-   - Use vivid metaphors and analogies to convey complex ideas.
-   - Make the content more engaging while keeping the message clear.
+   - Use vivid and relatable metaphors or analogies to simplify complex ideas.
+   - Make explanations more imaginative while keeping them understandable.
 
 3. **Character Perspectives** (REQUIRED):
-   - Introduce characters or perspectives that add depth to the story.
-   - Use dialogue or internal thoughts to enhance engagement.
+   - Introduce characters or viewpoints to add depth to the narrative.
+   - Use dialogue or internal thoughts to create an engaging experience.
 
 4. **Descriptive Scenarios** (REQUIRED):
-   - Paint vivid, descriptive scenes that help explain key points.
-   - Use the setting and mood to reinforce the message.
+   - Craft detailed scenes or settings to bring key points to life.
+   - Use sensory details (sights, sounds, emotions) to immerse the reader.
 
 5. **Core Message** (REQUIRED):
-   - Ensure the main message is preserved throughout the creative transformation.
-   - Focus on making the core message memorable and impactful.
+   - Preserve and highlight the main message throughout the story.
+   - Emphasize clarity and memorability in the narrative’s conclusion.
 
-IMPORTANT REQUIREMENTS:
-- Creativity must not undermine the core message.
-- Focus on engagement while staying true to the content’s integrity.
+CRUCIAL ELEMENTS:
+- Creativity should enhance, not overshadow, the content’s core message.
+- Use accessible language to make the story engaging for all readers.
 
 DO NOT:
-- Neglect the main message for creativity’s sake.
-- Stray too far from the content’s original purpose.",
+- Sacrifice the main message for the sake of creativity.
+- Deviate significantly from the content’s original intent or focus.
+- Overcomplicate with excessive details or unrelated narratives.",
       ],
       "persuasive" => [
         "prompt" => "Create a compelling argument using these structured steps:
@@ -289,7 +294,9 @@ IMPORTANT REQUIREMENTS:
 
 DO NOT:
 - Include irrelevant points.
-- Overcomplicate the explanations.",
+- Overcomplicate the explanations.
+- Include irrelevant or unsupported ideas.
+- Omit critical insights from the text.",
       ],
       "question_answer" => [
         "prompt" => "Create an insightful Q&A format based on the content. Follow these steps:
@@ -486,64 +493,204 @@ DO NOT:
   {
     return [
       "default" => [
-        "header_bg" => [240, 240, 240],
-        "text_color" => [0, 0, 0],
-        "header_text_color" => [0, 0, 0],
-        "line_color" => [200, 200, 200],
-      ],
-      "dark" => [
-        "header_bg" => [50, 50, 50],
-        "text_color" => [0, 0, 0],
-        "header_text_color" => [255, 255, 255],
-        "line_color" => [100, 100, 100],
-      ],
-      "blue" => [
-        "header_bg" => [235, 245, 255],
-        "text_color" => [0, 0, 0],
-        "header_text_color" => [0, 51, 153],
-        "line_color" => [200, 220, 255],
-      ],
-      "professional" => [
-        "header_bg" => [245, 245, 245],
-        "text_color" => [44, 62, 80],
-        "header_text_color" => [52, 73, 94],
-        "line_color" => [189, 195, 199],
-      ],
-      "modern" => [
-        "header_bg" => [236, 240, 241],
-        "text_color" => [46, 64, 82],
-        "header_text_color" => [41, 128, 185],
-        "line_color" => [189, 195, 199],
-      ],
-      "warm" => [
-        "header_bg" => [255, 249, 235],
-        "text_color" => [44, 62, 80],
-        "header_text_color" => [211, 84, 0],
-        "line_color" => [245, 176, 65],
-      ],
-      "nature" => [
-        "header_bg" => [241, 248, 233],
-        "text_color" => [46, 64, 82],
-        "header_text_color" => [39, 174, 96],
-        "line_color" => [46, 204, 113],
-      ],
-      "elegant" => [
+        "name" => "Default",
         "header_bg" => [250, 250, 250],
-        "text_color" => [44, 62, 80],
-        "header_text_color" => [142, 68, 173],
-        "line_color" => [155, 89, 182],
+        "text_color" => [51, 51, 51],
+        "header_text_color" => [33, 33, 33],
+        "line_color" => [229, 231, 235],
+        "accent_color" => [59, 130, 246],
+        "secondary_color" => [241, 245, 249],
       ],
+
+      "dark" => [
+        "name" => "Dark",
+        "header_bg" => [31, 41, 55],
+        "text_color" => [229, 231, 235],
+        "header_text_color" => [255, 255, 255],
+        "line_color" => [75, 85, 99],
+        "accent_color" => [31, 41, 55],
+        "secondary_color" => [31, 41, 55],
+      ],
+
+      "blue" => [
+        "name" => "Blue",
+        "header_bg" => [239, 246, 255],
+        "text_color" => [30, 58, 138],
+        "header_text_color" => [29, 78, 216],
+        "line_color" => [191, 219, 254],
+        "accent_color" => [59, 130, 246],
+        "secondary_color" => [219, 234, 254],
+      ],
+
+      "professional" => [
+        "name" => "Professional",
+        "header_bg" => [248, 250, 252],
+        "text_color" => [30, 41, 59],
+        "header_text_color" => [15, 23, 42],
+        "line_color" => [226, 232, 240],
+        "accent_color" => [51, 65, 85],
+        "secondary_color" => [241, 245, 249],
+      ],
+
+      "modern" => [
+        "name" => "Modern",
+        "header_bg" => [250, 250, 250],
+        "text_color" => [15, 23, 42],
+        "header_text_color" => [2, 132, 199],
+        "line_color" => [226, 232, 240],
+        "accent_color" => [14, 165, 233],
+        "secondary_color" => [240, 249, 255],
+      ],
+
+      "warm" => [
+        "name" => "Warm",
+        "header_bg" => [255, 251, 235],
+        "text_color" => [120, 53, 15],
+        "header_text_color" => [194, 65, 12],
+        "line_color" => [254, 243, 199],
+        "accent_color" => [234, 88, 12],
+        "secondary_color" => [255, 237, 213],
+      ],
+
+      "nature" => [
+        "name" => "Nature",
+        "header_bg" => [240, 253, 244],
+        "text_color" => [20, 83, 45],
+        "header_text_color" => [22, 101, 52],
+        "line_color" => [187, 247, 208],
+        "accent_color" => [34, 197, 94],
+        "secondary_color" => [220, 252, 231],
+      ],
+
+      "elegant" => [
+        "name" => "Elegant",
+        "header_bg" => [250, 245, 255],
+        "text_color" => [88, 28, 135],
+        "header_text_color" => [126, 34, 206],
+        "line_color" => [233, 213, 255],
+        "accent_color" => [147, 51, 234],
+        "secondary_color" => [243, 232, 255],
+      ],
+
       "tech" => [
-        "header_bg" => [236, 240, 241],
-        "text_color" => [44, 62, 80],
-        "header_text_color" => [52, 152, 219],
-        "line_color" => [41, 128, 185],
+        "name" => "Tech",
+        "header_bg" => [240, 253, 250],
+        "text_color" => [19, 78, 74],
+        "header_text_color" => [13, 148, 136],
+        "line_color" => [204, 251, 241],
+        "accent_color" => [20, 184, 166],
+        "secondary_color" => [153, 246, 228],
       ],
+
       "minimal" => [
-        "header_bg" => [255, 255, 255],
-        "text_color" => [44, 62, 80],
-        "header_text_color" => [44, 62, 80],
-        "line_color" => [189, 195, 199],
+        "name" => "Minimal",
+        "header_bg" => [250, 250, 250],
+        "text_color" => [23, 23, 23],
+        "header_text_color" => [23, 23, 23],
+        "line_color" => [229, 229, 229],
+        "accent_color" => [64, 64, 64],
+        "secondary_color" => [245, 245, 245],
+      ],
+
+      // Keeping existing successful themes
+      "midnight" => [
+        "name" => "Midnight",
+        "header_bg" => [17, 24, 39],
+        "text_color" => [243, 244, 246],
+        "header_text_color" => [255, 255, 255],
+        "line_color" => [55, 65, 81],
+        "accent_color" => [129, 140, 248],
+        "secondary_color" => [30, 41, 59],
+      ],
+
+      "corporate" => [
+        "name" => "Corporate",
+        "header_bg" => [248, 250, 252],
+        "text_color" => [30, 41, 59],
+        "header_text_color" => [15, 23, 42],
+        "line_color" => [226, 232, 240],
+        "accent_color" => [51, 65, 85],
+        "secondary_color" => [241, 245, 249],
+      ],
+
+      "forest" => [
+        "name" => "Forest",
+        "header_bg" => [240, 253, 244],
+        "text_color" => [20, 83, 45],
+        "header_text_color" => [22, 101, 52],
+        "line_color" => [187, 247, 208],
+        "accent_color" => [34, 197, 94],
+        "secondary_color" => [220, 252, 231],
+      ],
+
+      "ocean" => [
+        "name" => "Ocean",
+        "header_bg" => [239, 246, 255],
+        "text_color" => [30, 58, 138],
+        "header_text_color" => [29, 78, 216],
+        "line_color" => [191, 219, 254],
+        "accent_color" => [59, 130, 246],
+        "secondary_color" => [219, 234, 254],
+      ],
+
+      "slate" => [
+        "name" => "Slate",
+        "header_bg" => [248, 250, 252],
+        "text_color" => [51, 65, 85],
+        "header_text_color" => [30, 41, 59],
+        "line_color" => [226, 232, 240],
+        "accent_color" => [71, 85, 105],
+        "secondary_color" => [241, 245, 249],
+      ],
+
+      "violet" => [
+        "name" => "Violet",
+        "header_bg" => [250, 245, 255],
+        "text_color" => [109, 40, 217],
+        "header_text_color" => [126, 34, 206],
+        "line_color" => [233, 213, 255],
+        "accent_color" => [147, 51, 234],
+        "secondary_color" => [243, 232, 255],
+      ],
+
+      "rose" => [
+        "name" => "Rose",
+        "header_bg" => [255, 241, 242],
+        "text_color" => [190, 18, 60],
+        "header_text_color" => [225, 29, 72],
+        "line_color" => [254, 205, 211],
+        "accent_color" => [244, 63, 94],
+        "secondary_color" => [254, 226, 226],
+      ],
+
+      "monochrome" => [
+        "name" => "Monochrome",
+        "header_bg" => [250, 250, 250],
+        "text_color" => [23, 23, 23],
+        "header_text_color" => [23, 23, 23],
+        "line_color" => [229, 229, 229],
+        "accent_color" => [64, 64, 64],
+        "secondary_color" => [245, 245, 245],
+      ],
+
+      "sepia" => [
+        "name" => "Sepia",
+        "header_bg" => [254, 252, 232],
+        "text_color" => [133, 77, 14],
+        "header_text_color" => [161, 98, 7],
+        "line_color" => [254, 249, 195],
+        "accent_color" => [202, 138, 4],
+        "secondary_color" => [254, 240, 138],
+      ],
+
+      "arctic" => [
+        "name" => "Arctic",
+        "header_bg" => [245, 250, 255],
+        "text_color" => [12, 74, 110],
+        "header_text_color" => [3, 105, 161],
+        "line_color" => [186, 230, 253],
+        "accent_color" => [14, 165, 233],
+        "secondary_color" => [224, 242, 254],
       ],
     ];
   }

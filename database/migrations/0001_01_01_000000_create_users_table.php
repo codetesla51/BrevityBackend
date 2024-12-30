@@ -14,7 +14,7 @@ return new class extends Migration {
       $table->timestamp("email_verified_at")->nullable();
       $table->string("password");
       $table->rememberToken();
-      $table->unsignedInteger("max_credits")->default(3);
+      $table->unsignedInteger("max_credits")->default(10);
       $table->unsignedInteger("used_credits")->default(0);
       $table->string("ip_address")->nullable();
       $table->timestamps();

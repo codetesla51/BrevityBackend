@@ -21,6 +21,7 @@ class UserController extends Controller
   {
     $ipAddress = $request->ip();
     $existingUser = User::where("ip_address", $ipAddress)->first();
+
     if ($existingUser) {
       return response()->json(
         [
@@ -32,44 +33,34 @@ class UserController extends Controller
       );
     }
 
-    $validationRules = [
+    // Validate the request
+    $validatedData = $request->validate([
       "name" => ["required", "string", "max:255"],
       "password" => ["required", "string", "min:8"],
       "email" => ["required", "string", "email", "max:255", "unique:users"],
-    ];
-
-    foreach ($validationRules as $field => $rules) {
-      $singleFieldValidation = Validator::make($request->all(), [
-        $field => $rules,
-      ]);
-
-      if ($singleFieldValidation->fails()) {
-        return response()->json(
-          [
-            "message" => $singleFieldValidation->errors()->first(),
-          ],
-          422
-        );
-      }
-    }
+    ]);
 
     try {
+      // Create the user
       $user = User::create([
-        "name" => $request->name,
-        "email" => $request->email,
-        "password" => Hash::make($request->password),
-        "ip_address" => $ipAddress
+        "name" => $validatedData["name"],
+        "email" => $validatedData["email"],
+        "password" => Hash::make($validatedData["password"]),
+        "ip_address" => $ipAddress,
       ]);
+
+      // Generate the token for the user
+      $token = $user->createToken("auth_token")->plainTextToken;
 
       return response()->json(
         [
           "message" => "User registered successfully",
-          "user" => $user->only(["name", "email"]),
+          "token" => $token,
         ],
         201
       );
     } catch (\Exception $e) {
-      report($e); // Log the error
+      report($e); // Log the error for debugging
       return response()->json(
         [
           "message" => "Failed to register user",
@@ -123,7 +114,7 @@ class UserController extends Controller
   public function getUserInfo(Request $request): JsonResponse
   {
     return response()->json(
-      Auth::user()->only(["name", "email", "used_credits"])
+      Auth::user()->only(["name", "email", "used_credits","max_credits"])
     );
   }
 
