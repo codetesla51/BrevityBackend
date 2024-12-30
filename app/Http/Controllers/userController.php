@@ -193,4 +193,7 @@ class UserController extends Controller
       );
     }
   }
+  public function hello(){
+    return "hello world this works api is live";
+  }
 }

@@ -13,6 +13,7 @@ Route::middleware("auth:sanctum")->group(function () {
   Route::get("/downloadPDF/{id}", [PdfController::class, "downloadPDF"]);
   Route::delete("/deletePDF/{id}", [PdfController::class, "deletePDF"]); 
   Route::get("/user", [UserController::class, "getUserInfo"]);
+  Route::get("/hello", [UserController::class, "hello"]);
 });
 Route::get("/auth/google", [UserController::class, "redirectToGoogle"]);
 Route::post("/exchangeToken", [UserController::class, "exchangeToken"]);
