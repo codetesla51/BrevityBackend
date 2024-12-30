@@ -41,7 +41,7 @@ class PdfController extends Controller
     }
 
     $request->validate([
-      "pdf" => "required|file|mimes:pdf|max:10240",
+      "pdf" => "required|file|mimes:pdf|max:20240",
       "from_page" => "required|integer|min:1",
       "to_page" => "nullable|integer|min:1",
       "summary_type" =>
@@ -49,16 +49,36 @@ class PdfController extends Controller
       "theme" =>
         "nullable|string|in:" . implode(",", array_keys($this->themes)),
     ]);
+
     try {
       $pdfFile = $request->file("pdf");
+
+      if (!$pdfFile->isValid()) {
+        return response()->json(
+          [
+            "message" => "Invalid PDF file",
+            "error" => "The uploaded file is corrupted or invalid",
+          ],
+          422
+        );
+      }
+
       $userId = Auth::id();
       $username = Auth::user()->name;
       $timestamp = Carbon::now()->format("Y-m-d_H-i-s");
-      $originalFileName = $pdfFile->getClientOriginalName();
+
+      // Sanitize original filename
+      $originalFileName = strtolower(
+        preg_replace("/[^a-zA-Z0-9._-]/", "", $pdfFile->getClientOriginalName())
+      );
+      if (strlen($originalFileName) > 100) {
+        $originalFileName = substr($originalFileName, 0, 100);
+      }
+
       $uniqueFileName = sprintf(
         "%s_%s_%s_%s",
         $userId,
-        str::slug($username),
+        Str::slug($username),
         $timestamp,
         $originalFileName
       );
@@ -66,21 +86,33 @@ class PdfController extends Controller
       $fromPage = $request->input("from_page");
       $toPage = $request->input("to_page");
       $summaryType = $request->input("summary_type");
-      $parser = new Parser();
-      $pdf = $parser->parseFile($pdfFile->getPathname());
+
+      try {
+        $parser = new Parser();
+        $pdf = $parser->parseFile($pdfFile->getPathname());
+      } catch (\Exception $e) {
+        return response()->json(
+          [
+            "message" => "PDF parsing error",
+            "error" =>
+              "Unable to parse the PDF file. Please ensure it's a valid PDF document.",
+          ],
+          422
+        );
+      }
+
       $pages = $pdf->getPages();
       $totalPages = count($pages);
       $metaData = $pdf->getDetails();
-      if (!$toPage || $toPage > $totalPages) {
-        $toPage = $totalPages;
-      }
 
       if (!$toPage || $toPage > $totalPages) {
         $toPage = $totalPages;
       }
+
       if ($toPage - $fromPage + 1 > 10) {
         $toPage = $fromPage + 9;
       }
+
       if ($fromPage > $totalPages || $fromPage > $toPage) {
         return response()->json(
           [
@@ -94,13 +126,10 @@ class PdfController extends Controller
       $pageSummaries = [];
       $extractedText = "";
 
-      // Process pages
       for ($i = $fromPage - 1; $i < $toPage; $i++) {
         $pageNumber = $i + 1;
         $pageText = $pages[$i]->getText();
         $extractedText .= $pageText . "\n\n";
-
-        // Get summary for this page
         $pageSummaries[$pageNumber] = $this->Summarize(
           $pageText,
           $metaData,
@@ -112,7 +141,7 @@ class PdfController extends Controller
       $summaryFileName = sprintf(
         "summary_%s_%s_%s_%s.pdf",
         $userId,
-        str::slug($username),
+        Str::slug($username),
         pathinfo($originalFileName, PATHINFO_FILENAME),
         $timestamp
       );
@@ -132,7 +161,6 @@ class PdfController extends Controller
         "pages_processed" => $toPage - $fromPage + 1,
       ]);
 
-      // Increment used credits
       $user->increment("used_credits");
 
       return response()->json([
@@ -317,7 +345,12 @@ class PdfController extends Controller
     }
   }
 
-  private function storeSummary($pageSummaries, $metaData, $filename, $summaryType) {
+  private function storeSummary(
+    $pageSummaries,
+    $metaData,
+    $filename,
+    $summaryType
+  ) {
     $userId = Auth::id();
     $userPath = "pdfs/summaries/{$userId}";
     Storage::disk("public")->makeDirectory($userPath);
@@ -334,63 +367,72 @@ class PdfController extends Controller
     $pdf->Rect(0, 0, $pdf->GetPageWidth(), $pdf->GetPageHeight(), "F");
 
     // Add decorative header bar
-    $pdf->SetFillColor(...($themeColors["accent_color"] ?? $themeColors["header_text_color"]));
+    $pdf->SetFillColor(
+      ...$themeColors["accent_color"] ?? $themeColors["header_text_color"]
+    );
     $pdf->Rect(0, 0, $pdf->GetPageWidth(), 3, "F");
 
     // Document Title Section
-    $title = pathinfo($metaData["filename"] ?? "Untitled Document", PATHINFO_FILENAME);
+    $title = pathinfo(
+      $metaData["filename"] ?? "Untitled Document",
+      PATHINFO_FILENAME
+    );
     $title = ucwords(str_replace(["-", "_"], " ", $title));
-    
+
     // Format title as a header
     $titleText = "{{H1}}" . $title . "{{/H1}}";
     $this->writeFormattedText($pdf, $titleText, $themeColors);
-    
+
     // Subtitle using formatting
     $subtitleText = "{{H2}}Summary Analysis{{/H2}}";
     $this->writeFormattedText($pdf, $subtitleText, $themeColors);
-    
+
     // Metadata section
     if (isset($metaData["pageCount"])) {
-        $pdf->SetFont("Arial", "I", 10);
-        $pdf->SetTextColor(...$themeColors["text_color"]);
-        $metadataText = "{{I}}Total Pages: " . $metaData["pageCount"] . "{{/I}}";
-        $this->writeFormattedText($pdf, $metadataText, $themeColors);
+      $pdf->SetFont("Arial", "I", 10);
+      $pdf->SetTextColor(...$themeColors["text_color"]);
+      $metadataText = "{{I}}Total Pages: " . $metaData["pageCount"] . "{{/I}}";
+      $this->writeFormattedText($pdf, $metadataText, $themeColors);
     }
-    
+
     $pdf->Ln(10);
 
     // Process each page summary
     foreach ($pageSummaries as $pageNumber => $summary) {
-        // Check if we need a new page
-        if ($pdf->GetY() > $pdf->GetPageHeight() - 60) {
-            $pdf->AddPage();
-            
-            // Maintain background on new page
-            $pdf->SetFillColor(...$themeColors["header_bg"]);
-            $pdf->Rect(0, 0, $pdf->GetPageWidth(), $pdf->GetPageHeight(), "F");
-        }
+      // Check if we need a new page
+      if ($pdf->GetY() > $pdf->GetPageHeight() - 60) {
+        $pdf->AddPage();
 
-        // Page section header with accent bar
-        $headerY = $pdf->GetY();
-        $pdf->SetFillColor(...($themeColors["accent_color"] ?? $themeColors["header_text_color"]));
-        $pdf->Rect(20, $headerY, 4, 8, "F");
-        
-        $pdf->SetFillColor(...($themeColors["secondary_color"] ?? $themeColors["header_bg"]));
-        $pdf->Rect(24, $headerY, $pdf->GetPageWidth() - 44, 8, "F");
-        
-        // Format page header using your existing system
-        $headerText = "{{H3}}Page " . $pageNumber . "{{/H3}}";
-        $this->writeFormattedText($pdf, $headerText, $themeColors);
-        
-        // Add some spacing
-        $pdf->Ln(5);
-        
-        // Process and write the summary content
-        $cleanedText = $this->cleanText($summary);
-        $pdf->SetX($pdf->GetX() + 5); // Add left padding
-        $this->writeFormattedText($pdf, $cleanedText, $themeColors);
-        
-        $pdf->Ln(15); // Space between summaries
+        // Maintain background on new page
+        $pdf->SetFillColor(...$themeColors["header_bg"]);
+        $pdf->Rect(0, 0, $pdf->GetPageWidth(), $pdf->GetPageHeight(), "F");
+      }
+
+      // Page section header with accent bar
+      $headerY = $pdf->GetY();
+      $pdf->SetFillColor(
+        ...$themeColors["accent_color"] ?? $themeColors["header_text_color"]
+      );
+      $pdf->Rect(20, $headerY, 4, 8, "F");
+
+      $pdf->SetFillColor(
+        ...$themeColors["secondary_color"] ?? $themeColors["header_bg"]
+      );
+      $pdf->Rect(24, $headerY, $pdf->GetPageWidth() - 44, 8, "F");
+
+      // Format page header using your existing system
+      $headerText = "{{H3}}Page " . $pageNumber . "{{/H3}}";
+      $this->writeFormattedText($pdf, $headerText, $themeColors);
+
+      // Add some spacing
+      $pdf->Ln(5);
+
+      // Process and write the summary content
+      $cleanedText = $this->cleanText($summary);
+      $pdf->SetX($pdf->GetX() + 5); // Add left padding
+      $this->writeFormattedText($pdf, $cleanedText, $themeColors);
+
+      $pdf->Ln(15); // Space between summaries
     }
 
     // Footer section
@@ -399,27 +441,34 @@ class PdfController extends Controller
     // Save PDF
     $fullPath = storage_path("app/public/{$userPath}/" . $filename);
     if (!is_dir(dirname($fullPath))) {
-        mkdir(dirname($fullPath), 0755, true);
+      mkdir(dirname($fullPath), 0755, true);
     }
     $pdf->Output($fullPath, "F");
     return "{$userPath}/" . $filename;
-}
+  }
 
-private function addFooter($pdf, $themeColors) {
+  private function addFooter($pdf, $themeColors)
+  {
     $app_name = env("APP_NAME");
     $footerY = $pdf->GetPageHeight() - 30;
-    
+
     // Footer separator line
-    $pdf->SetDrawColor(...($themeColors["line_color"] ?? [200, 200, 200]));
+    $pdf->SetDrawColor(...$themeColors["line_color"] ?? [200, 200, 200]);
     $pdf->Line(20, $footerY - 5, $pdf->GetPageWidth() - 20, $footerY - 5);
-    
+
     // Footer text using formatting
     $pdf->SetY($footerY);
-    $footerText = "{{I}}Generated by " . $app_name . " on " . 
-                  Carbon::now()->format('F j, Y \a\t g:i A') . "\n" .
-                  "Page " . $pdf->PageNo() . "{{/I}}";
+    $footerText =
+      "{{I}}Generated by " .
+      $app_name .
+      " on " .
+      Carbon::now()->format('F j, Y \a\t g:i A') .
+      "\n" .
+      "Page " .
+      $pdf->PageNo() .
+      "{{/I}}";
     $this->writeFormattedText($pdf, $footerText, $themeColors);
-}
+  }
   public function getUserPDFs(): JsonResponse
   {
     try {
