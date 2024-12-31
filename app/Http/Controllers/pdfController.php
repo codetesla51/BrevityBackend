@@ -2,14 +2,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Smalot\PdfParser\Parser;
 use FPDF;
 use Carbon\Carbon;
 use voku\helper\UTF8;
 use App\Models\PDF;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 use Illuminate\Support\Str;
 use ForceUTF8\Encoding;
 use Symfony\Component\String\UnicodeString;
@@ -20,11 +19,19 @@ class PdfController extends Controller
 {
   private $summaryTypes;
   private $themes;
+  private $supabaseUrl;
+  private $apiKey;
+  private $bucketName;
+
   public function __construct()
   {
     $this->summaryTypes = PDFConfingController::getSummaryTypes();
     $this->themes = PDFConfingController::getThemes();
+    $this->supabaseUrl = env("SUPABASE_URL");
+    $this->apiKey = env("SUPABASE_API_KEY");
+    $this->bucketName = env("SUPABASE_BUCKET_NAME", "Brevity");
   }
+
   public function ConvertPDF(Request $request): JsonResponse
   {
     $user = Auth::user();
@@ -344,7 +351,53 @@ class PdfController extends Controller
       $pdf->Ln();
     }
   }
+  //superbase Methods For File Storage
+  public function uploadFile($file, $path)
+  {
+    $response = Http::withHeaders([
+      "Authorization" => "Bearer " . $this->apiKey,
+      "Content-Type" => $file->getMimeType(),
+    ])->post(
+      "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}",
+      $file->get()
+    );
 
+    if (!$response->successful()) {
+      throw new \Exception("Failed to upload file to Supabase");
+    }
+
+    return $path;
+  }
+
+  public function downloadFile($path)
+  {
+    $response = Http::withHeaders([
+      "Authorization" => "Bearer " . $this->apiKey,
+    ])->get(
+      "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}"
+    );
+
+    if (!$response->successful()) {
+      throw new \Exception("Failed to download file from Supabase");
+    }
+
+    return $response->body();
+  }
+
+  public function deleteFile($path)
+  {
+    $response = Http::withHeaders([
+      "Authorization" => "Bearer " . $this->apiKey,
+    ])->delete(
+      "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}"
+    );
+
+    if (!$response->successful()) {
+      throw new \Exception("Failed to delete file from Supabase");
+    }
+
+    return true;
+  }
   private function storeSummary(
     $pageSummaries,
     $metaData,
@@ -352,11 +405,9 @@ class PdfController extends Controller
     $summaryType
   ) {
     $userId = Auth::id();
-    $userPath = "pdfs/summaries/{$userId}";
-    Storage::disk("public")->makeDirectory($userPath);
+    $path = "pdfs/summaries/{$userId}/{$filename}";
     $theme = request("theme", "clean_light");
     $themeColors = $this->themes[$theme];
-
     // Initialize PDF
     $pdf = new FPDF();
     $pdf->SetMargins(25, 25, 25);
@@ -439,12 +490,17 @@ class PdfController extends Controller
     $this->addFooter($pdf, $themeColors);
 
     // Save PDF
-    $fullPath = storage_path("app/public/{$userPath}/" . $filename);
-    if (!is_dir(dirname($fullPath))) {
-      mkdir(dirname($fullPath), 0755, true);
-    }
-    $pdf->Output($fullPath, "F");
-    return "{$userPath}/" . $filename;
+    $tempPath = tempnam(sys_get_temp_dir(), 'pdf_');
+        $pdf->Output($tempPath, 'F');
+
+        try {
+            $uploadedPath = $this->uploadFile(new \Illuminate\Http\File($tempPath), $path);
+            unlink($tempPath);
+            return $uploadedPath;
+        } catch (\Exception $e) {
+            unlink($tempPath);
+            throw $e;
+        }
   }
 
   private function addFooter($pdf, $themeColors)
@@ -507,15 +563,15 @@ class PdfController extends Controller
         ->where("user_id", $userId)
         ->firstOrFail();
 
-      $filePath = storage_path("app/public/" . $pdf->summary_path);
+      $content = $this->storage->downloadFile($pdf->summary_path);
 
-      if (!file_exists($filePath)) {
-        return response()->json(["message" => "File not found"], 404);
-      }
-
-      return response()->download($filePath, $pdf->original_filename);
+      return response($content)
+        ->header("Content-Type", "application/pdf")
+        ->header(
+          "Content-Disposition",
+          'attachment; filename="' . $pdf->original_filename . '"'
+        );
     } catch (\Exception $e) {
-      report($e);
       return response()->json(
         ["message" => "Failed to download PDF: " . $e->getMessage()],
         500
@@ -531,23 +587,13 @@ class PdfController extends Controller
         ->where("user_id", $userId)
         ->firstOrFail();
 
-      // Delete the physical file
-      if (Storage::disk("public")->exists($pdf->summary_path)) {
-        Storage::disk("public")->delete($pdf->summary_path);
-      }
-
-      // Delete the database record
+      $this->storage->deleteFile($pdf->summary_path);
       $pdf->delete();
 
-      return response()->json([
-        "message" => "PDF deleted successfully",
-      ]);
+      return response()->json(["message" => "PDF deleted successfully"]);
     } catch (\Exception $e) {
-      report($e);
       return response()->json(
-        [
-          "message" => "Failed to delete PDF: " . $e->getMessage(),
-        ],
+        ["message" => "Failed to delete PDF: " . $e->getMessage()],
         500
       );
     }
