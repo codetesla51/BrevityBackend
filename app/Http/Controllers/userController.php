@@ -123,10 +123,11 @@ class UserController extends Controller
    */
   public function redirectToGoogle()
   {
-    // Instead of returning JSON, redirect directly
-    return Socialite::driver("google")
+    $url = Socialite::driver("google")
       ->stateless()
-      ->redirect();
+      ->redirect()
+      ->getTargetUrl();
+    return response()->json(["url" => $url]);
   }
   public function handleGoogleCallback()
   {
