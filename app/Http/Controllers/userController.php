@@ -114,7 +114,7 @@ class UserController extends Controller
   public function getUserInfo(Request $request): JsonResponse
   {
     return response()->json(
-      Auth::user()->only(["name", "email", "used_credits","max_credits"])
+      Auth::user()->only(["name", "email", "used_credits", "max_credits"])
     );
   }
 
@@ -127,8 +127,8 @@ class UserController extends Controller
       ->stateless()
       ->redirect()
       ->getTargetUrl();
+    return response()->json(["url" => $url]);
   }
-
   public function handleGoogleCallback()
   {
     try {
@@ -191,17 +191,5 @@ class UserController extends Controller
         400
       );
     }
-  }
-  public function hello(){
-    return response()->json([
-            'status' => 'success',
-            'data' => [
-                'users' => [
-                    ['id' => 1, 'name' => 'John'],
-                    ['id' => 2, 'name' => 'Jane']
-                ]
-            ]
-        ], 200);
-    
   }
 }
