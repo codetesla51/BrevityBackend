@@ -127,8 +127,11 @@ class UserController extends Controller
       ->stateless()
       ->redirect()
       ->getTargetUrl();
-    return response()->json(["url" => $url]);
-  }
+return response()->json(["url" => $url])
+        ->header('Access-Control-Allow-Origin', 'https://brevity-frontend-sepia.vercel.app')
+        ->header('Access-Control-Allow-Methods', 'GET')
+        ->header('Access-Control-Allow-Headers', 'Content-Type');
+}  
   public function handleGoogleCallback()
   {
     try {
