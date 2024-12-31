@@ -6,17 +6,6 @@ use App\Http\Controllers\pdfController;
 
 Route::post("/register", [UserController::class, "store"]);
 Route::post("/login", [UserController::class, "login"]);
-Route::get("/hello", [UserController::class, "hello"]);
-Route::get("/error", function () {
-  return response()->json(
-    [
-      "status" => "error",
-      "message" => "Internal server error",
-    ],
-    500
-  );
-});
-
 Route::middleware("auth:sanctum")->group(function () {
   Route::post("/pdfConvert", [PdfController::class, "ConvertPDF"]);
   Route::get("/fetchPDF", [PdfController::class, "getUserPDFs"]);
