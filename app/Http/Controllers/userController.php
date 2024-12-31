@@ -127,7 +127,6 @@ class UserController extends Controller
       ->stateless()
       ->redirect()
       ->getTargetUrl();
-    return response()->json(["url" => $url]);
   }
 
   public function handleGoogleCallback()
