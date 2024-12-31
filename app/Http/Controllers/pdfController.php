@@ -352,33 +352,25 @@ class PdfController extends Controller
     }
   }
   //superbase Methods For File Storage
-  private function uploadFile($file, $path)
-{
-    try {
+  private function uploadToSupabase($tempFile, $path)
+    {
+        $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
+        
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-            'Content-Type' => $file->getMimeType(),
-        ])->attach(
-            'file', 
-            file_get_contents($file->getRealPath()), 
-            $file->getClientOriginalName()
-        )->post("{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}");
+            'Authorization' => "Bearer {$this->apiKey}",
+            'Content-Type' => 'application/pdf'
+        ])->withBody(
+            file_get_contents($tempFile), 'application/pdf'
+        )->post($url);
 
         if (!$response->successful()) {
-            \Log::error('Supabase upload failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            throw new \Exception('Failed to upload file: ' . $response->body());
+            throw new \Exception("Upload failed: " . $response->body());
         }
 
         return $path;
-    } catch (\Exception $e) {
-        \Log::error('Upload error', ['error' => $e->getMessage()]);
-        throw $e;
     }
-}
 
+    
 private function downloadFile($path)
 {
     try {
