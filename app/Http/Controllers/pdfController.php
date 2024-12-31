@@ -352,52 +352,54 @@ class PdfController extends Controller
     }
   }
   //superbase Methods For File Storage
-  public function uploadFile($file, $path)
-  {
-    $response = Http::withHeaders([
-      "Authorization" => "Bearer " . $this->apiKey,
-      "Content-Type" => $file->getMimeType(),
-    ])->post(
-      "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}",
-      $file->get()
-    );
+  private function uploadFile($file, $path)
+{
+    try {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->apiKey,
+            'Content-Type' => $file->getMimeType(),
+        ])->attach(
+            'file', 
+            file_get_contents($file->getRealPath()), 
+            $file->getClientOriginalName()
+        )->post("{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}");
 
-    if (!$response->successful()) {
-      throw new \Exception("Failed to upload file to Supabase");
+        if (!$response->successful()) {
+            \Log::error('Supabase upload failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            throw new \Exception('Failed to upload file: ' . $response->body());
+        }
+
+        return $path;
+    } catch (\Exception $e) {
+        \Log::error('Upload error', ['error' => $e->getMessage()]);
+        throw $e;
     }
+}
 
-    return $path;
-  }
+private function downloadFile($path)
+{
+    try {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->apiKey,
+        ])->get("{$this->supabaseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}");
 
-  public function downloadFile($path)
-  {
-    $response = Http::withHeaders([
-      "Authorization" => "Bearer " . $this->apiKey,
-    ])->get(
-      "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}"
-    );
+        if (!$response->successful()) {
+            \Log::error('Supabase download failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            throw new \Exception('Failed to download file: ' . $response->body());
+        }
 
-    if (!$response->successful()) {
-      throw new \Exception("Failed to download file from Supabase");
+        return $response->body();
+    } catch (\Exception $e) {
+        \Log::error('Download error', ['error' => $e->getMessage()]);
+        throw $e;
     }
-
-    return $response->body();
-  }
-
-  public function deleteFile($path)
-  {
-    $response = Http::withHeaders([
-      "Authorization" => "Bearer " . $this->apiKey,
-    ])->delete(
-      "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/{$path}"
-    );
-
-    if (!$response->successful()) {
-      throw new \Exception("Failed to delete file from Supabase");
-    }
-
-    return true;
-  }
+}
   private function storeSummary(
     $pageSummaries,
     $metaData,
