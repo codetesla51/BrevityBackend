@@ -194,6 +194,15 @@ class UserController extends Controller
     }
   }
   public function hello(){
-    return "hello world this works api is live";
+    return response()->json([
+            'status' => 'success',
+            'data' => [
+                'users' => [
+                    ['id' => 1, 'name' => 'John'],
+                    ['id' => 2, 'name' => 'Jane']
+                ]
+            ]
+        ], 200);
+    
   }
 }
