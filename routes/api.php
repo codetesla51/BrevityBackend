@@ -4,8 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\userController;
 use App\Http\Controllers\pdfController;
 
-Route::post("/register", [UserController::class, "store"]);
-Route::post("/login", [UserController::class, "login"]);
+Route::get("/register", [UserController::class, "store"]);
+Route::get("/login", [UserController::class, "login"]);
 Route::get("/hello", [UserController::class, "hello"]);
 
 Route::middleware("auth:sanctum")->group(function () {
