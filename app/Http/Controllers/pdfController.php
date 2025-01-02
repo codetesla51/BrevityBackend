@@ -477,7 +477,7 @@ class PdfController extends Controller
     try {
       $bucketName = trim(env("SUPABASE_BUCKET_NAME", ""));
 
-      $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/{$bucketName}/{$path}";
+      $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/Brevity/{$path}";
       $apiKey = trim(env("SUPABASE_API_KEY", ""));
 
       $response = Http::withHeaders([
