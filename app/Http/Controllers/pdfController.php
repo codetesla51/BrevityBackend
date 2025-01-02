@@ -447,51 +447,106 @@ class PdfController extends Controller
   //superbase Methods For File Storage
   private function uploadToSupabase($tempFile, $path)
   {
-    $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
+    // Ensure proper URL formatting
+    $baseUrl = rtrim($this->supabaseUrl, "/");
+    if (!str_starts_with($baseUrl, "https://")) {
+      $baseUrl = "https://" . $baseUrl;
+    }
+
+    $url = "{$baseUrl}/storage/v1/object/{$this->bucketName}/$path";
 
     $apiKey = trim($this->apiKey);
 
-    $response = Http::withHeaders([
-      "Authorization" => sprintf("Bearer %s", $apiKey),
-      "Content-Type" => "application/pdf",
-    ])
-      ->withBody(file_get_contents($tempFile), "application/pdf")
-      ->post($url);
+    try {
+      $response = Http::withHeaders([
+        "Authorization" => "Bearer {$apiKey}",
+        "Content-Type" => "application/pdf",
+      ])
+        ->withBody(file_get_contents($tempFile), "application/pdf")
+        ->post($url);
 
-    if (!$response->successful()) {
-      \Log::error("Supabase upload failed", [
-        "status" => $response->status(),
-        "body" => $response->body(),
+      if (!$response->successful()) {
+        \Log::error("Supabase upload failed", [
+          "status" => $response->status(),
+          "body" => $response->body(),
+          "url" => $url,
+        ]);
+        throw new \Exception("Upload failed: " . $response->body());
+      }
+
+      return $path;
+    } catch (\Exception $e) {
+      \Log::error("Upload error", [
+        "error" => $e->getMessage(),
+        "url" => $url,
       ]);
-      throw new \Exception("Upload failed: " . $response->body());
+      throw $e;
     }
-
-    return $path;
   }
 
   private function downloadFile($path)
   {
     try {
-      // Ensure the API key is properly trimmed and formatted
+      // Ensure proper URL formatting
+      $baseUrl = rtrim($this->supabaseUrl, "/");
+      if (!str_starts_with($baseUrl, "https://")) {
+        $baseUrl = "https://" . $baseUrl;
+      }
+
       $apiKey = trim($this->apiKey);
+      $url = "{$baseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}";
 
       $response = Http::withHeaders([
-        "Authorization" => sprintf("Bearer %s", $apiKey),
-      ])->get(
-        "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}"
-      );
+        "Authorization" => "Bearer {$apiKey}",
+      ])->get($url);
 
       if (!$response->successful()) {
         \Log::error("Supabase download failed", [
           "status" => $response->status(),
           "body" => $response->body(),
+          "url" => $url,
         ]);
         throw new \Exception("Failed to download file: " . $response->body());
       }
 
       return $response->body();
     } catch (\Exception $e) {
-      \Log::error("Download error", ["error" => $e->getMessage()]);
+      \Log::error("Download error", [
+        "error" => $e->getMessage(),
+      ]);
+      throw $e;
+    }
+  }
+
+  private function deleteFromSupabase($path)
+  {
+    // Ensure proper URL formatting
+    $baseUrl = rtrim($this->supabaseUrl, "/");
+    if (!str_starts_with($baseUrl, "https://")) {
+      $baseUrl = "https://" . $baseUrl;
+    }
+
+    $url = "{$baseUrl}/storage/v1/object/{$this->bucketName}/$path";
+    $apiKey = trim($this->apiKey);
+
+    try {
+      $response = Http::withHeaders([
+        "Authorization" => "Bearer {$apiKey}",
+      ])->delete($url);
+
+      if (!$response->successful()) {
+        \Log::error("Supabase delete failed", [
+          "status" => $response->status(),
+          "body" => $response->body(),
+          "url" => $url,
+        ]);
+        throw new \Exception("Delete failed: " . $response->body());
+      }
+    } catch (\Exception $e) {
+      \Log::error("Delete error", [
+        "error" => $e->getMessage(),
+        "url" => $url,
+      ]);
       throw $e;
     }
   }
@@ -681,27 +736,6 @@ class PdfController extends Controller
   }
 
   
-
-  private function deleteFromSupabase($path)
-  {
-    $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
-
-    // Ensure the API key is properly trimmed and formatted
-    $apiKey = trim($this->apiKey);
-
-    $response = Http::withHeaders([
-      "Authorization" => sprintf("Bearer %s", $apiKey),
-    ])->delete($url);
-
-    if (!$response->successful()) {
-      \Log::error("Supabase delete failed", [
-        "status" => $response->status(),
-        "body" => $response->body(),
-      ]);
-      throw new \Exception("Delete failed: " . $response->body());
-    }
-  }
-
   public function deletePDF($id)
   {
     try {
