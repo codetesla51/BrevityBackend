@@ -448,10 +448,11 @@ class PdfController extends Controller
   private function uploadToSupabase($tempFile, $path)
 {
     $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/{$this->bucketName}/$path";
-
     try {
+        $apiKey = trim(env('SUPABASE_API_KEY', ''));
+        
         $response = Http::withHeaders([
-            'Authorization' => "Bearer {$this->apiKey}",
+            'Authorization' => 'Bearer ' . $apiKey,
             'Content-Type' => 'application/pdf'
         ])
         ->withBody(file_get_contents($tempFile), 'application/pdf')
@@ -464,7 +465,6 @@ class PdfController extends Controller
             ]);
             throw new \Exception("Upload failed: " . $response->body());
         }
-
         return $path;
     } catch (\Exception $e) {
         \Log::error('Upload error', ['error' => $e->getMessage()]);
@@ -476,9 +476,10 @@ private function downloadFile($path)
 {
     try {
         $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/{$this->bucketName}/{$path}";
+        $apiKey = trim(env('SUPABASE_API_KEY', ''));
 
         $response = Http::withHeaders([
-            'Authorization' => "Bearer {$this->apiKey}"
+            'Authorization' => 'Bearer ' . $apiKey
         ])->get($url);
 
         if (!$response->successful()) {
@@ -488,7 +489,6 @@ private function downloadFile($path)
             ]);
             throw new \Exception("Failed to download file: " . $response->body());
         }
-
         return $response->body();
     } catch (\Exception $e) {
         \Log::error('Download error', ['error' => $e->getMessage()]);
@@ -498,11 +498,12 @@ private function downloadFile($path)
 
 private function deleteFromSupabase($path)
 {
-    $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/{$this->bucketName}/$path";
-
+    $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/{$this->bucketName}/{$path}";
     try {
+        $apiKey = trim(env('SUPABASE_API_KEY', ''));
+
         $response = Http::withHeaders([
-            'Authorization' => "Bearer {$this->apiKey}"
+            'Authorization' => 'Bearer ' . $apiKey
         ])->delete($url);
 
         if (!$response->successful()) {
