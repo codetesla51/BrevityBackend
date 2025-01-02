@@ -16,3 +16,4 @@ Route::middleware("auth:sanctum")->group(function () {
 Route::get("/auth/google", [UserController::class, "redirectToGoogle"]);
 Route::get("/auth/google/callback", [UserController::class, "handleGoogleCallback"]);
 Route::post("/exchangeToken", [UserController::class, "exchangeToken"]);
+
