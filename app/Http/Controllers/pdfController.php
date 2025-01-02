@@ -680,31 +680,7 @@ class PdfController extends Controller
     }
   }
 
-  private function downloadFile($path)
-  {
-    try {
-      $apiKey = trim($this->apiKey);
-
-      $response = Http::withHeaders([
-        "Authorization" => sprintf("Bearer %s", $apiKey),
-      ])->get(
-        "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}"
-      );
-
-      if (!$response->successful()) {
-        \Log::error("Supabase download failed", [
-          "status" => $response->status(),
-          "body" => $response->body(),
-        ]);
-        throw new \Exception("Failed to download file: " . $response->body());
-      }
-
-      return $response->body();
-    } catch (\Exception $e) {
-      \Log::error("Download error", ["error" => $e->getMessage()]);
-      throw $e;
-    }
-  }
+  
 
   private function deleteFromSupabase($path)
   {
