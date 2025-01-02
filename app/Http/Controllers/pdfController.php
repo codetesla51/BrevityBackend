@@ -353,45 +353,46 @@ class PdfController extends Controller
   }
   //superbase Methods For File Storage
   private function uploadToSupabase($tempFile, $path)
-    {
-        $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
-        
-        $response = Http::withHeaders([
-            'Authorization' => "Bearer {$this->apiKey}",
-            'Content-Type' => 'application/pdf'
-        ])->withBody(
-            file_get_contents($tempFile), 'application/pdf'
-        )->post($url);
+  {
+    $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
 
-        if (!$response->successful()) {
-            throw new \Exception("Upload failed: " . $response->body());
-        }
+    $response = Http::withHeaders([
+      "Authorization" => "Bearer {$this->apiKey}",
+      "Content-Type" => "application/pdf",
+    ])
+      ->withBody(file_get_contents($tempFile), "application/pdf")
+      ->post($url);
 
-        return $path;
+    if (!$response->successful()) {
+      throw new \Exception("Upload failed: " . $response->body());
     }
 
-    
-private function downloadFile($path)
-{
+    return $path;
+  }
+
+  private function downloadFile($path)
+  {
     try {
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->apiKey,
-        ])->get("{$this->supabaseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}");
+      $response = Http::withHeaders([
+        "Authorization" => "Bearer " . $this->apiKey,
+      ])->get(
+        "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}"
+      );
 
-        if (!$response->successful()) {
-            \Log::error('Supabase download failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            throw new \Exception('Failed to download file: ' . $response->body());
-        }
+      if (!$response->successful()) {
+        \Log::error("Supabase download failed", [
+          "status" => $response->status(),
+          "body" => $response->body(),
+        ]);
+        throw new \Exception("Failed to download file: " . $response->body());
+      }
 
-        return $response->body();
+      return $response->body();
     } catch (\Exception $e) {
-        \Log::error('Download error', ['error' => $e->getMessage()]);
-        throw $e;
+      \Log::error("Download error", ["error" => $e->getMessage()]);
+      throw $e;
     }
-}
+  }
   private function storeSummary(
     $pageSummaries,
     $metaData,
@@ -484,17 +485,20 @@ private function downloadFile($path)
     $this->addFooter($pdf, $themeColors);
 
     // Save PDF
-    $tempPath = tempnam(sys_get_temp_dir(), 'pdf_');
-        $pdf->Output($tempPath, 'F');
+    $tempPath = tempnam(sys_get_temp_dir(), "pdf_");
+    $pdf->Output($tempPath, "F");
 
-        try {
-            $uploadedPath = $this->uploadFile(new \Illuminate\Http\File($tempPath), $path);
-            unlink($tempPath);
-            return $uploadedPath;
-        } catch (\Exception $e) {
-            unlink($tempPath);
-            throw $e;
-        }
+    try {
+      $uploadedPath = $this->uploadToSupabase(
+        new \Illuminate\Http\File($tempPath),
+        $path
+      );
+      unlink($tempPath);
+      return $uploadedPath;
+    } catch (\Exception $e) {
+      unlink($tempPath);
+      throw $e;
+    }
   }
 
   private function addFooter($pdf, $themeColors)
@@ -550,46 +554,59 @@ private function downloadFile($path)
   }
 
   public function downloadPDF($id)
-  {
+{
     try {
-      $userId = Auth::id();
-      $pdf = PDF::where("id", $id)
-        ->where("user_id", $userId)
-        ->firstOrFail();
+        $userId = Auth::id();
+        $pdf = PDF::where("id", $id)
+            ->where("user_id", $userId)
+            ->firstOrFail();
 
-      $content = $this->storage->downloadFile($pdf->summary_path);
+        $content = $this->downloadFile($pdf->summary_path);
 
-      return response($content)
-        ->header("Content-Type", "application/pdf")
-        ->header(
-          "Content-Disposition",
-          'attachment; filename="' . $pdf->original_filename . '"'
+        return response($content)
+            ->header("Content-Type", "application/pdf")
+            ->header(
+                "Content-Disposition",
+                'attachment; filename="' . $pdf->original_filename . '"'
+            );
+    } catch (\Exception $e) {
+        return response()->json(
+            ["message" => "Failed to download PDF: " . $e->getMessage()],
+            500
         );
-    } catch (\Exception $e) {
-      return response()->json(
-        ["message" => "Failed to download PDF: " . $e->getMessage()],
-        500
-      );
     }
-  }
+}
 
-  public function deletePDF($id)
-  {
+private function deleteFromSupabase($path)
+{
+    $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
+    
+    $response = Http::withHeaders([
+        'Authorization' => "Bearer {$this->apiKey}"
+    ])->delete($url);
+
+    if (!$response->successful()) {
+        throw new \Exception("Delete failed: " . $response->body());
+    }
+}
+
+public function deletePDF($id)
+{
     try {
-      $userId = Auth::id();
-      $pdf = PDF::where("id", $id)
-        ->where("user_id", $userId)
-        ->firstOrFail();
+        $userId = Auth::id();
+        $pdf = PDF::where("id", $id)
+            ->where("user_id", $userId)
+            ->firstOrFail();
 
-      $this->storage->deleteFile($pdf->summary_path);
-      $pdf->delete();
+        $this->deleteFromSupabase($pdf->summary_path);
+        $pdf->delete();
 
-      return response()->json(["message" => "PDF deleted successfully"]);
+        return response()->json(["message" => "PDF deleted successfully"]);
     } catch (\Exception $e) {
-      return response()->json(
-        ["message" => "Failed to delete PDF: " . $e->getMessage()],
-        500
-      );
+        return response()->json(
+            ["message" => "Failed to delete PDF: " . $e->getMessage()],
+            500
+        );
     }
-  }
+}
 }
