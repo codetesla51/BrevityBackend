@@ -477,7 +477,7 @@ class PdfController extends Controller
     try {
       $bucketName = trim(env("SUPABASE_BUCKET_NAME", ""));
 
-      $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/Brevity/{$path}";
+      $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/{$this->bucketName}/{$path}";
       $apiKey = trim(env("SUPABASE_API_KEY", ""));
 
       $response = Http::withHeaders([
@@ -491,7 +491,7 @@ class PdfController extends Controller
           "url" => $url,
           "bucketName" => $bucketName,
         ]);
-        throw new \Exception("Upload failed: " . $response->body());
+        throw new \Exception("Download failed: " . $response->body());
       }
 
       return $response->body();
