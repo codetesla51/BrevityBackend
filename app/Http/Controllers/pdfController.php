@@ -446,78 +446,80 @@ class PdfController extends Controller
   }
   //superbase Methods For File Storage
   private function uploadToSupabase($tempFile, $path)
-{
+  {
     $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/{$this->bucketName}/$path";
     try {
-        $apiKey = trim(env('SUPABASE_API_KEY', ''));
-        
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $apiKey,
-            'Content-Type' => 'application/pdf'
-        ])
-        ->withBody(file_get_contents($tempFile), 'application/pdf')
+      $apiKey = trim(env("SUPABASE_API_KEY", ""));
+
+      $response = Http::withHeaders([
+        "Authorization" => "Bearer " . $apiKey,
+        "Content-Type" => "application/pdf",
+      ])
+        ->withBody(file_get_contents($tempFile), "application/pdf")
         ->post($url);
 
-        if (!$response->successful()) {
-            \Log::error('Supabase upload failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            throw new \Exception("Upload failed: " . $response->body());
-        }
-        return $path;
+      if (!$response->successful()) {
+        \Log::error("Supabase upload failed", [
+          "status" => $response->status(),
+          "body" => $response->body(),
+        ]);
+        throw new \Exception("Upload failed: " . $response->body());
+      }
+      return $path;
     } catch (\Exception $e) {
-        \Log::error('Upload error', ['error' => $e->getMessage()]);
-        throw $e;
+      \Log::error("Upload error", ["error" => $e->getMessage()]);
+      throw $e;
     }
-}
+  }
 
-private function downloadFile($path)
-{
+  private function downloadFile($path)
+  {
     try {
-        $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/{$this->bucketName}/{$path}";
-        $apiKey = trim(env('SUPABASE_API_KEY', ''));
+      $bucketName = trim(env("SUPABASE_BUCKET_NAME", ""));
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $apiKey
-        ])->get($url);
+      $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/{$bucketName}/{$path}";
+      $apiKey = trim(env("SUPABASE_API_KEY", ""));
 
-        if (!$response->successful()) {
-            \Log::error('Supabase download failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            throw new \Exception("Failed to download file: " . $response->body());
-        }
-        return $response->body();
+      $response = Http::withHeaders([
+        "Authorization" => "Bearer " . $apiKey,
+      ])->get($url);
+
+      if (!$response->successful()) {
+        \Log::error("Supabase download failed", [
+          "status" => $response->status(),
+          "body" => $response->body(),
+        ]);
+        throw new \Exception("Failed to download file: " . $response->body());
+      }
+
+      return $response->body();
     } catch (\Exception $e) {
-        \Log::error('Download error', ['error' => $e->getMessage()]);
-        throw $e;
+      \Log::error("Download error", ["error" => $e->getMessage()]);
+      throw $e;
     }
-}
-
-private function deleteFromSupabase($path)
-{
+  }
+  private function deleteFromSupabase($path)
+  {
     $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/{$this->bucketName}/{$path}";
     try {
-        $apiKey = trim(env('SUPABASE_API_KEY', ''));
+      $apiKey = trim(env("SUPABASE_API_KEY", ""));
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $apiKey
-        ])->delete($url);
+      $response = Http::withHeaders([
+        "Authorization" => "Bearer " . $apiKey,
+      ])->delete($url);
 
-        if (!$response->successful()) {
-            \Log::error('Supabase delete failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            throw new \Exception("Delete failed: " . $response->body());
-        }
+      if (!$response->successful()) {
+        \Log::error("Supabase delete failed", [
+          "status" => $response->status(),
+          "body" => $response->body(),
+        ]);
+        throw new \Exception("Delete failed: " . $response->body());
+      }
     } catch (\Exception $e) {
-        \Log::error('Delete error', ['error' => $e->getMessage()]);
-        throw $e;
+      \Log::error("Delete error", ["error" => $e->getMessage()]);
+      throw $e;
     }
-}
+  }
 
   private function storeSummary(
     $pageSummaries,
