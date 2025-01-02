@@ -34,6 +34,7 @@ class PdfController extends Controller
 
   public function ConvertPDF(Request $request): JsonResponse
   {
+    // Credit check
     $user = Auth::user();
     if ($user->max_credits - $user->used_credits <= 0) {
       return response()->json(
@@ -47,6 +48,7 @@ class PdfController extends Controller
       );
     }
 
+    // Validation
     $request->validate([
       "pdf" => "required|file|mimes:pdf|max:20240",
       "from_page" => "required|integer|min:1",
@@ -60,21 +62,65 @@ class PdfController extends Controller
     try {
       $pdfFile = $request->file("pdf");
 
-      if (!$pdfFile->isValid()) {
+      // File validation
+      if (!$pdfFile || !$pdfFile->isValid()) {
+        \Log::error("PDF Upload Failed", [
+          "error" => $pdfFile
+            ? $pdfFile->getErrorMessage()
+            : "No file uploaded",
+          "mime" => $pdfFile ? $pdfFile->getMimeType() : "N/A",
+        ]);
         return response()->json(
           [
             "message" => "Invalid PDF file",
-            "error" => "The uploaded file is corrupted or invalid",
+            "error" => "File upload failed or corrupted",
           ],
           422
         );
       }
 
+      // Content validation
+      $fileContent = file_get_contents($pdfFile->getPathname());
+      if (!$fileContent || strlen($fileContent) < 100) {
+        return response()->json(
+          [
+            "message" => "Invalid PDF content",
+            "error" => "File appears to be empty or corrupted",
+          ],
+          422
+        );
+      }
+
+      if (substr($fileContent, 0, 4) !== "%PDF") {
+        return response()->json(
+          [
+            "message" => "Invalid PDF format",
+            "error" => "File is not a valid PDF document",
+          ],
+          422
+        );
+      }
+    if (!$request->hasFile('pdf') || !$request->file('pdf')->isValid()) {
+        \Log::error('PDF Upload Failed', [
+            'error' => $request->hasFile('pdf') ? 
+                $request->file('pdf')->getErrorMessage() : 
+                'No file received',
+            'uploadedSize' => $request->header('Content-Length'),
+            'maxSize' => ini_get('upload_max_filesize')
+        ]);
+        
+        return response()->json([
+            "message" => "The pdf failed to upload.",
+            "errors" => [
+                "pdf" => ["File upload failed. Maximum allowed size is " . ini_get('upload_max_filesize')]
+            ]
+        ], 422);
+    }
+
+      // File naming
       $userId = Auth::id();
       $username = Auth::user()->name;
       $timestamp = Carbon::now()->format("Y-m-d_H-i-s");
-
-      // Sanitize original filename
       $originalFileName = strtolower(
         preg_replace("/[^a-zA-Z0-9._-]/", "", $pdfFile->getClientOriginalName())
       );
@@ -90,6 +136,7 @@ class PdfController extends Controller
         $originalFileName
       );
 
+      // Page processing
       $fromPage = $request->input("from_page");
       $toPage = $request->input("to_page");
       $summaryType = $request->input("summary_type");
@@ -98,6 +145,10 @@ class PdfController extends Controller
         $parser = new Parser();
         $pdf = $parser->parseFile($pdfFile->getPathname());
       } catch (\Exception $e) {
+        \Log::error("PDF Parsing Error", [
+          "error" => $e->getMessage(),
+          "file" => $originalFileName,
+        ]);
         return response()->json(
           [
             "message" => "PDF parsing error",
@@ -112,6 +163,7 @@ class PdfController extends Controller
       $totalPages = count($pages);
       $metaData = $pdf->getDetails();
 
+      // Page range validation
       if (!$toPage || $toPage > $totalPages) {
         $toPage = $totalPages;
       }
@@ -130,21 +182,37 @@ class PdfController extends Controller
         );
       }
 
+      // Process pages
       $pageSummaries = [];
       $extractedText = "";
 
       for ($i = $fromPage - 1; $i < $toPage; $i++) {
         $pageNumber = $i + 1;
-        $pageText = $pages[$i]->getText();
-        $extractedText .= $pageText . "\n\n";
-        $pageSummaries[$pageNumber] = $this->Summarize(
-          $pageText,
-          $metaData,
-          $summaryType,
-          $pageNumber
-        );
+        try {
+          $pageText = $pages[$i]->getText();
+          $extractedText .= $pageText . "\n\n";
+          $pageSummaries[$pageNumber] = $this->Summarize(
+            $pageText,
+            $metaData,
+            $summaryType,
+            $pageNumber
+          );
+        } catch (\Exception $e) {
+          \Log::error("Page Processing Error", [
+            "page" => $pageNumber,
+            "error" => $e->getMessage(),
+          ]);
+          return response()->json(
+            [
+              "message" => "Error processing page $pageNumber",
+              "error" => $e->getMessage(),
+            ],
+            500
+          );
+        }
       }
 
+      // Generate summary PDF
       $summaryFileName = sprintf(
         "summary_%s_%s_%s_%s.pdf",
         $userId,
@@ -153,31 +221,50 @@ class PdfController extends Controller
         $timestamp
       );
 
-      $summaryPath = $this->storeSummary(
-        $pageSummaries,
-        $metaData,
-        $summaryFileName,
-        $summaryType
-      );
+      try {
+        $summaryPath = $this->storeSummary(
+          $pageSummaries,
+          $metaData,
+          $summaryFileName,
+          $summaryType
+        );
 
-      PDF::create([
-        "user_id" => $userId,
-        "original_filename" => $originalFileName,
-        "summary_path" => $summaryPath,
-        "summary_type" => $summaryType,
-        "pages_processed" => $toPage - $fromPage + 1,
-      ]);
+        // Create database record
+        PDF::create([
+          "user_id" => $userId,
+          "original_filename" => $originalFileName,
+          "summary_path" => $summaryPath,
+          "summary_type" => $summaryType,
+          "pages_processed" => $toPage - $fromPage + 1,
+        ]);
 
-      $user->increment("used_credits");
+        $user->increment("used_credits");
 
-      return response()->json([
-        "message" => "Text extracted and summarized successfully",
-        "extracted_text" => $extractedText,
-        "page_summaries" => $pageSummaries,
-        "summary_file" => $summaryPath,
-        "remaining_credits" => $user->max_credits - $user->used_credits,
-      ]);
+        return response()->json([
+          "message" => "Text extracted and summarized successfully",
+          "extracted_text" => $extractedText,
+          "page_summaries" => $pageSummaries,
+          "summary_file" => $summaryPath,
+          "remaining_credits" => $user->max_credits - $user->used_credits,
+        ]);
+      } catch (\Exception $e) {
+        \Log::error("Summary Generation Error", [
+          "error" => $e->getMessage(),
+          "trace" => $e->getTraceAsString(),
+        ]);
+        return response()->json(
+          [
+            "message" => "Error generating summary",
+            "error" => $e->getMessage(),
+          ],
+          500
+        );
+      }
     } catch (\Exception $e) {
+      \Log::error("PDF Processing Error", [
+        "error" => $e->getMessage(),
+        "trace" => $e->getTraceAsString(),
+      ]);
       return response()->json(
         [
           "message" => "Error processing PDF",
@@ -554,59 +641,59 @@ class PdfController extends Controller
   }
 
   public function downloadPDF($id)
-{
+  {
     try {
-        $userId = Auth::id();
-        $pdf = PDF::where("id", $id)
-            ->where("user_id", $userId)
-            ->firstOrFail();
+      $userId = Auth::id();
+      $pdf = PDF::where("id", $id)
+        ->where("user_id", $userId)
+        ->firstOrFail();
 
-        $content = $this->downloadFile($pdf->summary_path);
+      $content = $this->downloadFile($pdf->summary_path);
 
-        return response($content)
-            ->header("Content-Type", "application/pdf")
-            ->header(
-                "Content-Disposition",
-                'attachment; filename="' . $pdf->original_filename . '"'
-            );
-    } catch (\Exception $e) {
-        return response()->json(
-            ["message" => "Failed to download PDF: " . $e->getMessage()],
-            500
+      return response($content)
+        ->header("Content-Type", "application/pdf")
+        ->header(
+          "Content-Disposition",
+          'attachment; filename="' . $pdf->original_filename . '"'
         );
+    } catch (\Exception $e) {
+      return response()->json(
+        ["message" => "Failed to download PDF: " . $e->getMessage()],
+        500
+      );
     }
-}
+  }
 
-private function deleteFromSupabase($path)
-{
+  private function deleteFromSupabase($path)
+  {
     $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
-    
+
     $response = Http::withHeaders([
-        'Authorization' => "Bearer {$this->apiKey}"
+      "Authorization" => "Bearer {$this->apiKey}",
     ])->delete($url);
 
     if (!$response->successful()) {
-        throw new \Exception("Delete failed: " . $response->body());
+      throw new \Exception("Delete failed: " . $response->body());
     }
-}
+  }
 
-public function deletePDF($id)
-{
+  public function deletePDF($id)
+  {
     try {
-        $userId = Auth::id();
-        $pdf = PDF::where("id", $id)
-            ->where("user_id", $userId)
-            ->firstOrFail();
+      $userId = Auth::id();
+      $pdf = PDF::where("id", $id)
+        ->where("user_id", $userId)
+        ->firstOrFail();
 
-        $this->deleteFromSupabase($pdf->summary_path);
-        $pdf->delete();
+      $this->deleteFromSupabase($pdf->summary_path);
+      $pdf->delete();
 
-        return response()->json(["message" => "PDF deleted successfully"]);
+      return response()->json(["message" => "PDF deleted successfully"]);
     } catch (\Exception $e) {
-        return response()->json(
-            ["message" => "Failed to delete PDF: " . $e->getMessage()],
-            500
-        );
+      return response()->json(
+        ["message" => "Failed to delete PDF: " . $e->getMessage()],
+        500
+      );
     }
-}
+  }
 }
