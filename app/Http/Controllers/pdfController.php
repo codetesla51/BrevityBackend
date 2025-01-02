@@ -27,7 +27,7 @@ class PdfController extends Controller
   {
     $this->summaryTypes = PDFConfingController::getSummaryTypes();
     $this->themes = PDFConfingController::getThemes();
-    $this->supabaseUrl = env("SUPABASE_URL");
+    $this->supabaseUrl = "https://ehasinzstggpytkeeqlm.supabase.co";
     $this->apiKey = env("SUPABASE_API_KEY");
     $this->bucketName = env("SUPABASE_BUCKET_NAME", "Brevity");
   }
@@ -446,110 +446,77 @@ class PdfController extends Controller
   }
   //superbase Methods For File Storage
   private function uploadToSupabase($tempFile, $path)
-  {
-    // Ensure proper URL formatting
-    $baseUrl = rtrim($this->supabaseUrl, "/");
-    if (!str_starts_with($baseUrl, "https://")) {
-      $baseUrl = "https://" . $baseUrl;
-    }
-
-    $url = "{$baseUrl}/storage/v1/object/{$this->bucketName}/$path";
-
-    $apiKey = trim($this->apiKey);
+{
+    $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/{$this->bucketName}/$path";
 
     try {
-      $response = Http::withHeaders([
-        "Authorization" => "Bearer {$apiKey}",
-        "Content-Type" => "application/pdf",
-      ])
-        ->withBody(file_get_contents($tempFile), "application/pdf")
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$this->apiKey}",
+            'Content-Type' => 'application/pdf'
+        ])
+        ->withBody(file_get_contents($tempFile), 'application/pdf')
         ->post($url);
 
-      if (!$response->successful()) {
-        \Log::error("Supabase upload failed", [
-          "status" => $response->status(),
-          "body" => $response->body(),
-          "url" => $url,
-        ]);
-        throw new \Exception("Upload failed: " . $response->body());
-      }
+        if (!$response->successful()) {
+            \Log::error('Supabase upload failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            throw new \Exception("Upload failed: " . $response->body());
+        }
 
-      return $path;
+        return $path;
     } catch (\Exception $e) {
-      \Log::error("Upload error", [
-        "error" => $e->getMessage(),
-        "url" => $url,
-      ]);
-      throw $e;
+        \Log::error('Upload error', ['error' => $e->getMessage()]);
+        throw $e;
     }
-  }
+}
 
-  private function downloadFile($path)
-  {
+private function downloadFile($path)
+{
     try {
-      // Ensure proper URL formatting
-      $baseUrl = rtrim($this->supabaseUrl, "/");
-      if (!str_starts_with($baseUrl, "https://")) {
-        $baseUrl = "https://" . $baseUrl;
-      }
+        $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/public/{$this->bucketName}/{$path}";
 
-      $apiKey = trim($this->apiKey);
-      $url = "{$baseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}";
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$this->apiKey}"
+        ])->get($url);
 
-      $response = Http::withHeaders([
-        "Authorization" => "Bearer {$apiKey}",
-      ])->get($url);
+        if (!$response->successful()) {
+            \Log::error('Supabase download failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            throw new \Exception("Failed to download file: " . $response->body());
+        }
 
-      if (!$response->successful()) {
-        \Log::error("Supabase download failed", [
-          "status" => $response->status(),
-          "body" => $response->body(),
-          "url" => $url,
-        ]);
-        throw new \Exception("Failed to download file: " . $response->body());
-      }
-
-      return $response->body();
+        return $response->body();
     } catch (\Exception $e) {
-      \Log::error("Download error", [
-        "error" => $e->getMessage(),
-      ]);
-      throw $e;
+        \Log::error('Download error', ['error' => $e->getMessage()]);
+        throw $e;
     }
-  }
+}
 
-  private function deleteFromSupabase($path)
-  {
-    // Ensure proper URL formatting
-    $baseUrl = rtrim($this->supabaseUrl, "/");
-    if (!str_starts_with($baseUrl, "https://")) {
-      $baseUrl = "https://" . $baseUrl;
-    }
-
-    $url = "{$baseUrl}/storage/v1/object/{$this->bucketName}/$path";
-    $apiKey = trim($this->apiKey);
+private function deleteFromSupabase($path)
+{
+    $url = "https://ehasinzstggpytkeeqlm.supabase.co/storage/v1/object/{$this->bucketName}/$path";
 
     try {
-      $response = Http::withHeaders([
-        "Authorization" => "Bearer {$apiKey}",
-      ])->delete($url);
+        $response = Http::withHeaders([
+            'Authorization' => "Bearer {$this->apiKey}"
+        ])->delete($url);
 
-      if (!$response->successful()) {
-        \Log::error("Supabase delete failed", [
-          "status" => $response->status(),
-          "body" => $response->body(),
-          "url" => $url,
-        ]);
-        throw new \Exception("Delete failed: " . $response->body());
-      }
+        if (!$response->successful()) {
+            \Log::error('Supabase delete failed', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            throw new \Exception("Delete failed: " . $response->body());
+        }
     } catch (\Exception $e) {
-      \Log::error("Delete error", [
-        "error" => $e->getMessage(),
-        "url" => $url,
-      ]);
-      throw $e;
+        \Log::error('Delete error', ['error' => $e->getMessage()]);
+        throw $e;
     }
-  }
+}
 
   private function storeSummary(
     $pageSummaries,
@@ -735,7 +702,6 @@ class PdfController extends Controller
     }
   }
 
-  
   public function deletePDF($id)
   {
     try {
