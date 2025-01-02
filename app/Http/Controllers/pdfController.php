@@ -485,11 +485,13 @@ class PdfController extends Controller
       ])->get($url);
 
       if (!$response->successful()) {
-        \Log::error("Supabase download failed", [
+        \Log::error("Supabase upload failed", [
           "status" => $response->status(),
           "body" => $response->body(),
+          "url" => $url,
+          "bucketName" => $bucketName,
         ]);
-        throw new \Exception("Failed to download file: " . $response->body());
+        throw new \Exception("Upload failed: " . $response->body());
       }
 
       return $response->body();
