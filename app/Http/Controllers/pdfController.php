@@ -100,22 +100,28 @@ class PdfController extends Controller
           422
         );
       }
-    if (!$request->hasFile('pdf') || !$request->file('pdf')->isValid()) {
-        \Log::error('PDF Upload Failed', [
-            'error' => $request->hasFile('pdf') ? 
-                $request->file('pdf')->getErrorMessage() : 
-                'No file received',
-            'uploadedSize' => $request->header('Content-Length'),
-            'maxSize' => ini_get('upload_max_filesize')
+      if (!$request->hasFile("pdf") || !$request->file("pdf")->isValid()) {
+        \Log::error("PDF Upload Failed", [
+          "error" => $request->hasFile("pdf")
+            ? $request->file("pdf")->getErrorMessage()
+            : "No file received",
+          "uploadedSize" => $request->header("Content-Length"),
+          "maxSize" => ini_get("upload_max_filesize"),
         ]);
-        
-        return response()->json([
+
+        return response()->json(
+          [
             "message" => "The pdf failed to upload.",
             "errors" => [
-                "pdf" => ["File upload failed. Maximum allowed size is " . ini_get('upload_max_filesize')]
-            ]
-        ], 422);
-    }
+              "pdf" => [
+                "File upload failed. Maximum allowed size is " .
+                ini_get("upload_max_filesize"),
+              ],
+            ],
+          ],
+          422
+        );
+      }
 
       // File naming
       $userId = Auth::id();
@@ -443,14 +449,20 @@ class PdfController extends Controller
   {
     $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
 
+    $apiKey = trim($this->apiKey);
+
     $response = Http::withHeaders([
-      "Authorization" => "Bearer {$this->apiKey}",
+      "Authorization" => sprintf("Bearer %s", $apiKey),
       "Content-Type" => "application/pdf",
     ])
       ->withBody(file_get_contents($tempFile), "application/pdf")
       ->post($url);
 
     if (!$response->successful()) {
+      \Log::error("Supabase upload failed", [
+        "status" => $response->status(),
+        "body" => $response->body(),
+      ]);
       throw new \Exception("Upload failed: " . $response->body());
     }
 
@@ -460,8 +472,11 @@ class PdfController extends Controller
   private function downloadFile($path)
   {
     try {
+      // Ensure the API key is properly trimmed and formatted
+      $apiKey = trim($this->apiKey);
+
       $response = Http::withHeaders([
-        "Authorization" => "Bearer " . $this->apiKey,
+        "Authorization" => sprintf("Bearer %s", $apiKey),
       ])->get(
         "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}"
       );
@@ -480,6 +495,7 @@ class PdfController extends Controller
       throw $e;
     }
   }
+
   private function storeSummary(
     $pageSummaries,
     $metaData,
@@ -664,15 +680,48 @@ class PdfController extends Controller
     }
   }
 
+  private function downloadFile($path)
+  {
+    try {
+      $apiKey = trim($this->apiKey);
+
+      $response = Http::withHeaders([
+        "Authorization" => sprintf("Bearer %s", $apiKey),
+      ])->get(
+        "{$this->supabaseUrl}/storage/v1/object/public/{$this->bucketName}/{$path}"
+      );
+
+      if (!$response->successful()) {
+        \Log::error("Supabase download failed", [
+          "status" => $response->status(),
+          "body" => $response->body(),
+        ]);
+        throw new \Exception("Failed to download file: " . $response->body());
+      }
+
+      return $response->body();
+    } catch (\Exception $e) {
+      \Log::error("Download error", ["error" => $e->getMessage()]);
+      throw $e;
+    }
+  }
+
   private function deleteFromSupabase($path)
   {
     $url = "{$this->supabaseUrl}/storage/v1/object/{$this->bucketName}/$path";
 
+    // Ensure the API key is properly trimmed and formatted
+    $apiKey = trim($this->apiKey);
+
     $response = Http::withHeaders([
-      "Authorization" => "Bearer {$this->apiKey}",
+      "Authorization" => sprintf("Bearer %s", $apiKey),
     ])->delete($url);
 
     if (!$response->successful()) {
+      \Log::error("Supabase delete failed", [
+        "status" => $response->status(),
+        "body" => $response->body(),
+      ]);
       throw new \Exception("Delete failed: " . $response->body());
     }
   }
