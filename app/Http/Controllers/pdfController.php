@@ -533,37 +533,32 @@ class PdfController extends Controller
     $path = "pdfs/summaries/{$userId}/{$filename}";
     $theme = request("theme", "clean_light");
     $themeColors = $this->themes[$theme];
+
     // Initialize PDF
     $pdf = new FPDF();
     $pdf->SetMargins(25, 25, 25);
     $pdf->AddPage();
 
-    // Set document background
     $pdf->SetFillColor(...$themeColors["header_bg"]);
     $pdf->Rect(0, 0, $pdf->GetPageWidth(), $pdf->GetPageHeight(), "F");
 
-    // Add decorative header bar
     $pdf->SetFillColor(
       ...$themeColors["accent_color"] ?? $themeColors["header_text_color"]
     );
     $pdf->Rect(0, 0, $pdf->GetPageWidth(), 3, "F");
 
-    // Document Title Section
-    $title = pathinfo(
-      $metaData["filename"] ?? "Untitled Document",
-      PATHINFO_FILENAME
-    );
+    $originalFile = request()->file("pdf");
+    $title = $originalFile
+      ? pathinfo($originalFile->getClientOriginalName(), PATHINFO_FILENAME)
+      : pathinfo($filename, PATHINFO_FILENAME);
     $title = ucwords(str_replace(["-", "_"], " ", $title));
 
-    // Format title as a header
     $titleText = "{{H1}}" . $title . "{{/H1}}";
     $this->writeFormattedText($pdf, $titleText, $themeColors);
 
-    // Subtitle using formatting
     $subtitleText = "{{H2}}Summary Analysis{{/H2}}";
     $this->writeFormattedText($pdf, $subtitleText, $themeColors);
 
-    // Metadata section
     if (isset($metaData["pageCount"])) {
       $pdf->SetFont("Arial", "I", 10);
       $pdf->SetTextColor(...$themeColors["text_color"]);
@@ -576,7 +571,8 @@ class PdfController extends Controller
     // Process each page summary
     foreach ($pageSummaries as $pageNumber => $summary) {
       // Check if we need a new page
-      if ($pdf->GetY() > $pdf->GetPageHeight() - 60) {
+      if ($pdf->GetY() > $pdf->GetPageHeight() - 80) {
+        // Increased margin to prevent overflow
         $pdf->AddPage();
 
         // Maintain background on new page
@@ -611,10 +607,10 @@ class PdfController extends Controller
       $pdf->Ln(15); // Space between summaries
     }
 
-    // Footer section
-    $this->addFooter($pdf, $themeColors);
+    if ($pdf->GetY() < $pdf->GetPageHeight() - 40) {
+      $this->addFooter($pdf, $themeColors);
+    }
 
-    // Save PDF
     $tempPath = tempnam(sys_get_temp_dir(), "pdf_");
     $pdf->Output($tempPath, "F");
 
