@@ -570,17 +570,14 @@ class PdfController extends Controller
 
     // Process each page summary
     foreach ($pageSummaries as $pageNumber => $summary) {
-      // Check if we need a new page
       if ($pdf->GetY() > $pdf->GetPageHeight() - 80) {
-        // Increased margin to prevent overflow
         $pdf->AddPage();
-
-        // Maintain background on new page
         $pdf->SetFillColor(...$themeColors["header_bg"]);
         $pdf->Rect(0, 0, $pdf->GetPageWidth(), $pdf->GetPageHeight(), "F");
+
+        $this->addFooter($pdf, $themeColors);
       }
 
-      // Page section header with accent bar
       $headerY = $pdf->GetY();
       $pdf->SetFillColor(
         ...$themeColors["accent_color"] ?? $themeColors["header_text_color"]
