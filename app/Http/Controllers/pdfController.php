@@ -575,7 +575,6 @@ class PdfController extends Controller
         $pdf->SetFillColor(...$themeColors["header_bg"]);
         $pdf->Rect(0, 0, $pdf->GetPageWidth(), $pdf->GetPageHeight(), "F");
 
-        $this->addFooter($pdf, $themeColors);
       }
 
       $headerY = $pdf->GetY();
