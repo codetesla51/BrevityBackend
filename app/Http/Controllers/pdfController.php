@@ -34,7 +34,7 @@ class PdfController extends Controller
 
   public function ConvertPDF(Request $request): JsonResponse
   {
-    // Credit check
+    
     $user = Auth::user();
     if ($user->max_credits - $user->used_credits <= 0) {
       return response()->json(
