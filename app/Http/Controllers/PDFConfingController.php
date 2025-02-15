@@ -58,10 +58,10 @@ DO NOT:
 - Exceed scope of original text.",
       ],
       "short" => [
-        "prompt" => "Craft a concise yet comprehensive summary that captures all key points. Follow these instructions:
+        "prompt" => "Craft a concise yet comprehensive summary that captures all key points noted in the text. Follow these instructions:
 
 1. **Core Message** (REQUIRED):
-   - Summarize the primary purpose and outcome in up to 5 sentences.
+   - Summarize the primary purpose and outcome in up to 1-2 sentences.
    - Use clear and precise language to articulate the main point.
 
 2. **Key Points** (REQUIRED):
@@ -78,14 +78,14 @@ DO NOT:
 
 CRUCIAL REQUIREMENTS:
 - Keep the summary concise and well-structured.
-- Ensure every statement is backed by evidence.
+- Ensure every statement is based on the txt
 - Use bullet points to enhance readability.
 - Maintain focus on practical application.
 
 DO NOT:
-- Exclude any critical points.
+- Exclude any critical points in the text.
 - Use vague or overly abstract language.
-- Add unnecessary context or exceed a 400-word limit.",
+- Add unnecessary context or exceed a 200-word limit.",
       ],
       "structured" => [
         "prompt" => "Create a thorough and well-structured analysis. Follow these precise instructions:
@@ -469,14 +469,14 @@ DO NOT:
    - Ensure the options are clear and distinct.
 
 3. **Correct Answer** (REQUIRED):
-   - Indicate which option is correct for each question.
+   - Indicate which option is correct for each question.but at the very end of all the questions explain the Answer based on the pdf
 
 4. **Difficulty Levels** (REQUIRED):
    - Include questions of varying difficulty (easy, medium, hard).
    - Ensure the difficulty levels are balanced.
 
 5. **Clarity** (REQUIRED):
-   - Ensure the questions and options are clear and unambiguous.
+ - Ensure the questions and options are clear and unambiguous based on text.
    - Avoid confusing or misleading phrasing.
 
 IMPORTANT REQUIREMENTS:
