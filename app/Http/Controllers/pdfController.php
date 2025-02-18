@@ -174,8 +174,8 @@ class PdfController extends Controller
         $toPage = $totalPages;
       }
 
-      if ($toPage - $fromPage + 1 > 10) {
-        $toPage = $fromPage + 9;
+      if ($toPage - $fromPage + 1 > 20) {
+        $toPage = $fromPage + 19;
       }
 
       if ($fromPage > $totalPages || $fromPage > $toPage) {
